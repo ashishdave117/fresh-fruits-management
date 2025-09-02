@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fresh Fruits & Vegetables</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        section {
+            margin: 20px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            margin-bottom: 20px;
+        }
+        .session-buttons button {
+            padding: 10px 20px;
+            margin: 5px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .inventory {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        .item {
+            text-align: center;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+        .item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .item button {
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .item button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .item .stock-info {
+            font-size: 0.9em;
+            color: #666;
+            margin: 5px 0;
+        }
+        .item .low-stock {
+            color: #d32f2f;
+            font-weight: bold;
+        }
+        #bill-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        #bill-table th, #bill-table td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        #bill-table th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .total {
+            text-align: right;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .customer-details {
+            margin-bottom: 20px;
+        }
+        .customer-details input {
+            padding: 8px;
+            margin: 5px;
+            width: 200px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1 style="display: inline-block;">Fresh Fruits & Vegetable</h1>
+        <button style="float: right; margin-top: 20px;" onclick="window.location.href='contactus.html'">Contact Us</button>
+        <button style="float: right; margin-top: 20px;" onclick="window.location.href='stock.html'">Stock</button>
+    </header>
+
+    <!-- Section 1: Sessions -->
+    <section id="sessions">
+        <h2>Select a Session</h2>
+        <div class="session-buttons">
+            <button onclick="selectSession('Winter')">Winter</button>
+            <button onclick="selectSession('Summer')">Summer</button>
+            <button onclick="selectSession('Monsoon')">Monsoon</button>
+            <button onclick="selectSession('All Season')">All Season</button>
+        </div>
+    </section>
+
+    <!-- Section 2: Fruits & Vegetables Inventory -->
+    <section id="fruits-vegetables">
+        <h2>Fruits & Vegetables Inventory</h2>
+        <div class="inventory" id="inventory">
+            <!-- Items will be dynamically added here based on the selected session -->
+        </div>
+    </section>
+
+    <!-- Section 3: Billing Section -->
+    <section id="billing">
+        <h2>Billing Section</h2>
+        <div class="customer-details">
+            <h3>Customer Details</h3>
+            <input type="text" id="customer-name" placeholder="Customer Name">
+            <input type="text" id="customer-phone" placeholder="Phone Number">
+            <input type="email" id="customer-email" placeholder="Email">
+        </div>
+        <div class="selected-items">
+            <table id="bill-table">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Quantity (in KG)</th>
+                        <th>Price</th>
+                        <th>Total</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="bill-items">
+                    <!-- Selected items will appear here -->
+                </tbody>
+            </table>
+        </div>
+        <div class="total">
+            <strong>Total Bill: ₹<span id="total-bill">0</span></strong>
+        </div>
+        <button onclick="generatePDF()">Download Bill as PDF</button>
+        <button onclick="saveToExcel()">Save to Excel</button>
+    </section>
+
+    <script>
+        // Data for fruits and vegetables based on sessions with stock information
+        const itemsData = {
+            "Summer": [
+                { "name": "Mango", "price": 60, "image": "img/Mango.png", "stock": 50 },
+                { "name": "Watermelon", "price": 25, "image": "img/Watermelon.png", "stock": 30 },
+                { "name": "Cucumber", "price": 15, "image": "img/Cucumber.png", "stock": 40 },
+                { "name": "Tomato", "price": 20, "image": "img/Tomato.png", "stock": 60 },
+                { "name": "Muskmelon", "price": 30, "image": "img/Muskmelon.png", "stock": 25 },
+                { "name": "Papaya", "price": 35, "image": "img/Papaya.png", "stock": 20 },
+                { "name": "Pineapple", "price": 45, "image": "img/Pineapple.png", "stock": 15 },
+                { "name": "Guava", "price": 40, "image": "img/Guava.png", "stock": 35 },
+                { "name": "Litchi", "price": 50, "image": "img/Litchi.png", "stock": 18 },
+                { "name": "Bell Pepper", "price": 30, "image": "img/BellPepper.png", "stock": 45 },
+                { "name": "Bitter Gourd", "price": 20, "image": "img/BitterGourd.png", "stock": 22 },
+                { "name": "Jackfruit", "price": 55, "image": "img/Jackfruit.png", "stock": 12 },
+                { "name": "Brinjal", "price": 25, "image": "img/Brinjal.png", "stock": 30 },
+                { "name": "Snake Gourd", "price": 22, "image": "img/SnakeGourd.png", "stock": 18 },
+                { "name": "Zucchini", "price": 35, "image": "img/Zucchini.png", "stock": 25 },
+                { "name": "Mint", "price": 10, "image": "img/Mint.png", "stock": 40 },
+                { "name": "Okra (Ladyfinger)", "price": 28, "image": "img/Okra.png", "stock": 35 },
+                { "name": "Pumpkin", "price": 32, "image": "img/Pumpkin.png", "stock": 20 },
+                { "name": "Radish", "price": 18, "image": "img/Radish.png", "stock": 25 }
+            ],
+            "Winter": [
+                { "name": "Carrot", "price": 20, "image": "img/Carrot.png", "stock": 70 },
+                { "name": "Peas", "price": 30, "image": "img/Peas.png", "stock": 40 },
+                { "name": "Spinach", "price": 15, "image": "img/Spinach.png", "stock": 55 },
+                { "name": "Apple", "price": 50, "image": "img/Apple.png", "stock": 25 },
+                { "name": "Orange", "price": 45, "image": "img/Orange.png", "stock": 30 },
+                { "name": "Strawberry", "price": 70, "image": "img/Strawberry.png", "stock": 15 },
+                { "name": "Beetroot", "price": 25, "image": "img/Beetroot.png", "stock": 35 },
+                { "name": "Broccoli", "price": 40, "image": "img/Broccoli.png", "stock": 20 },
+                { "name": "Cauliflower", "price": 35, "image": "img/Cauliflower.png", "stock": 25 },
+                { "name": "Turnip", "price": 22, "image": "img/Turnip.png", "stock": 30 },
+                { "name": "Radish", "price": 20, "image": "img/Radish.png", "stock": 40 },
+                { "name": "Cabbage", "price": 18, "image": "img/Cabbage.png", "stock": 35 },
+                { "name": "Fenugreek Leaves", "price": 12, "image": "img/Fenugreek.png", "stock": 45 },
+                { "name": "Grapes", "price": 55, "image": "img/Grapes.png", "stock": 25 },
+                { "name": "Sweet Potato", "price": 25, "image": "img/SweetPotato.png", "stock": 30 },
+                { "name": "Pomegranate", "price": 65, "image": "img/Pomegranate.png", "stock": 20 },
+                { "name": "Celery", "price": 28, "image": "img/Celery.png", "stock": 25 },
+                { "name": "Brussels Sprouts", "price": 50, "image": "img/BrusselsSprouts.png", "stock": 15 },
+                { "name": "Persimmon", "price": 80, "image": "img/Persimmon.png", "stock": 10 },
+                { "name": "Leeks", "price": 30, "image": "img/Leeks.png", "stock": 20 }
+            ],
+            "Monsoon": [
+                { "name": "Corn", "price": 40, "image": "img/Corn.png", "stock": 50 },
+                { "name": "Pear", "price": 50, "image": "img/Pear.png", "stock": 25 },
+                { "name": "Jamun", "price": 55, "image": "img/Jamun.png", "stock": 20 },
+                { "name": "Plum", "price": 60, "image": "img/Plum.png", "stock": 30 },
+                { "name": "Cherry", "price": 70, "image": "img/Cherry.png", "stock": 15 },
+                { "name": "Sapota (Chikoo)", "price": 45, "image": "img/Sapota.png", "stock": 25 },
+                { "name": "Lemon", "price": 15, "image": "img/Lemon.png", "stock": 60 },
+                { "name": "Garlic", "price": 25, "image": "img/Garlic.png", "stock": 45 },
+                { "name": "Ginger", "price": 30, "image": "img/Ginger.png", "stock": 40 },
+                { "name": "Basil", "price": 10, "image": "img/Basil.png", "stock": 35 },
+                { "name": "Taro Root", "price": 28, "image": "img/TaroRoot.png", "stock": 25 },
+                { "name": "Ivy Gourd", "price": 22, "image": "img/IvyGourd.png", "stock": 30 },
+                { "name": "Cluster Beans", "price": 25, "image": "img/ClusterBeans.png", "stock": 35 },
+                { "name": "Kale", "price": 40, "image": "img/Kale.png", "stock": 20 },
+                { "name": "Ash Gourd", "price": 32, "image": "img/AshGourd.png", "stock": 25 },
+                { "name": "Snake Beans", "price": 27, "image": "img/SnakeBeans.png", "stock": 30 },
+                { "name": "Tamarind", "price": 30, "image": "img/Tamarind.png", "stock": 40 }
+            ],
+            "All Season": [
+                { "name": "Banana", "price": 20, "image": "img/Banana.png", "stock": 80 },
+                { "name": "Potato", "price": 25, "image": "img/Potato.png", "stock": 90 },
+                { "name": "Onion", "price": 30, "image": "img/Onion.png", "stock": 75 },
+                { "name": "Garlic", "price": 28, "image": "img/Garlic.png", "stock": 50 },
+                { "name": "Chili", "price": 22, "image": "img/Chili.png", "stock": 45 },
+                { "name": "Capsicum", "price": 35, "image": "img/Capsicum.png", "stock": 40 },
+                { "name": "Lettuce", "price": 18, "image": "img/Lettuce.png", "stock": 30 },
+                { "name": "Eggplant", "price": 32, "image": "img/Eggplant.png", "stock": 35 },
+                { "name": "Coriander", "price": 15, "image": "img/Coriander.png", "stock": 55 },
+                { "name": "Pumpkin", "price": 30, "image": "img/Pumpkin.png", "stock": 25 }
+            ]
+        };
+
+        let selectedItems = [];
+        let totalBill = 0;
+
+        // Function to display items based on the selected session
+        function selectSession(session) {
+            const inventory = document.getElementById("inventory");
+            inventory.innerHTML = ""; // Clear previous items
+
+            itemsData[session].forEach(item => {
+                const itemDiv = document.createElement("div");
+                itemDiv.className = "item";
+                
+                // Check if item is out of stock
+                const isOutOfStock = item.stock <= 0;
+                const stockClass = item.stock < 5 ? "low-stock" : "";
+                
+                itemDiv.innerHTML = `
+                    <img src="${item.image}" alt="${item.name}">
+                    <h3>${item.name}</h3>
+                    <p>₹${item.price}/kg</p>
+                    <div class="stock-info ${stockClass}">Stock: ${item.stock} kg</div>
+                    <button onclick="addItem('${item.name}', ${item.price}, '${session}')" 
+                            ${isOutOfStock ? 'disabled' : ''}>
+                        ${isOutOfStock ? 'Out of Stock' : 'Add'}
+                    </button>
+                `;
+                inventory.appendChild(itemDiv);
+            });
+        }
+
+        // Function to add items to the billing section
+        function addItem(name, price, session) {
+            // Find the item in the data to check stock
+            const itemData = itemsData[session].find(item => item.name === name);
+            
+            if (!itemData || itemData.stock <= 0) {
+                alert("This item is out of stock!");
+                return;
+            }
+
+            const existingItem = selectedItems.find(item => item.name === name && item.session === session);
+            if (existingItem) {
+                existingItem.quantity += 1;
+                existingItem.total = existingItem.quantity * existingItem.price;
+            } else {
+                selectedItems.push({ 
+                    name, 
+                    price, 
+                    quantity: 1, 
+                    total: price,
+                    session 
+                });
+            }
+            updateBillingSection();
+        }
+
+        // Function to update the billing section
+        function updateBillingSection() {
+            const billItems = document.getElementById("bill-items");
+            billItems.innerHTML = "";
+            totalBill = 0;
+
+            selectedItems.forEach((item, index) => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${item.name}</td>
+                    <td>
+                        <button onclick="decreaseQuantity(${index})">-</button>
+                        ${item.quantity}
+                        <button onclick="increaseQuantity(${index})">+</button>
+                    </td>
+                    <td>₹${item.price}</td>
+                    <td>₹${item.total}</td>
+                    <td><button onclick="removeItem(${index})">Remove</button></td>
+                `;
+                billItems.appendChild(row);
+                totalBill += item.total;
+            });
+
+            document.getElementById("total-bill").innerText = totalBill;
+        }
+
+        // Function to increase quantity
+        function increaseQuantity(index) {
+            const item = selectedItems[index];
+            // Check if there's enough stock
+            const itemData = itemsData[item.session].find(i => i.name === item.name);
+            
+            if (itemData && item.quantity < itemData.stock) {
+                item.quantity += 1;
+                item.total = item.quantity * item.price;
+                updateBillingSection();
+            } else {
+                alert("Not enough stock available!");
+            }
+        }
+
+        // Function to decrease quantity
+        function decreaseQuantity(index) {
+            if (selectedItems[index].quantity > 1) {
+                selectedItems[index].quantity -= 1;
+                selectedItems[index].total = selectedItems[index].quantity * selectedItems[index].price;
+            } else {
+                selectedItems.splice(index, 1);
+            }
+            updateBillingSection();
+        }
+
+        // Function to remove an item
+        function removeItem(index) {
+            selectedItems.splice(index, 1);
+            updateBillingSection();
+        }
+
+        // Function to generate PDF
+        function generatePDF() {
+            if (selectedItems.length === 0) {
+                alert("Please add items to the bill first!");
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.rect(0, 0, 210, 30, 'F');
+            doc.setFontSize(20);
+            doc.setTextColor(255, 255, 255);
+            doc.setFont("helvetica", "bold");
+            doc.text("Fresh Fruits & Vegetables", 105, 20, { align: "center" });
+            
+            // Add bill title
+            doc.setFontSize(16);
+            doc.setTextColor(...darkColor);
+            doc.text("INVOICE", 105, 45, { align: "center" });
+            
+            // Add customer details section
+            doc.setFillColor(245, 245, 245);
+            doc.rect(10, 55, 190, 30, 'F');
+            doc.setFontSize(12);
+            doc.setTextColor(...darkColor);
+            doc.setFont("helvetica", "bold");
+            doc.text("Customer Details", 15, 60);
+            
+            doc.setFont("helvetica", "normal");
+            doc.text(`Name: ${document.getElementById("customer-name").value}`, 15, 70);
+            doc.text(`Phone: ${document.getElementById("customer-phone").value}`, 15, 80);
+            doc.text(`Email: ${document.getElementById("customer-email").value}`, 100, 70);
+            
+            // Add items table header
+            doc.setFillColor(...secondaryColor);
+            doc.rect(10, 90, 190, 10, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.text("Item", 15, 97);
+            doc.text("Quantity", 100, 97);
+            doc.text("Price", 150, 97);
+            doc.text("Total", 180, 97);
+            
+            // Add items
+            doc.setTextColor(...darkColor);
+            let y = 105;
+            selectedItems.forEach((item, index) => {
+                doc.text(item.name, 15, y);
+                doc.text(`${item.quantity} kg`, 100, y);
+                doc.text(`₹${item.price.toFixed(2)}`, 150, y);
+                doc.text(`₹${item.total.toFixed(2)}`, 180, y);
+                
+                // Update stock in the data (this would normally be saved to a database)
+                const itemData = itemsData[item.session].find(i => i.name === item.name);
+                if (itemData) {
+                    itemData.stock -= item.quantity;
+                }
+                
+                // Add light separator
+                if (index < selectedItems.length - 1) {
+                    doc.setDrawColor(200, 200, 200);
+                    doc.line(10, y + 5, 200, y + 5);
+                }
+                y += 10;
+            });
+            
+            // Add total section
+            doc.setFont("helvetica", "bold");
+            doc.text("Subtotal:", 150, y + 10);
+            doc.text(`₹${totalBill.toFixed(2)}`, 180, y + 10);
+            
+            // Add footer
+            doc.setFontSize(10);
+            doc.setTextColor(100, 100, 100);
+            doc.text("Thank you for your purchase!", 105, 280, { align: "center" });
+            doc.text("Fresh Fruits & Vegetables Market", 105, 285, { align: "center" });
+            doc.text("Contact: +91 9579721940 | Email: ashishdave028@gmail.com", 105, 290, { align: "center" });    
+            // Colors
+            const primaryColor = [46, 125, 50]; // Green
+            const secondaryColor = [255, 152, 0]; // Orange
+            const darkColor = [33, 33, 33]; // Dark gray
+            
+            // Add header with logo placeholder and title
+            doc.setFillColor(...primaryColor);
+        
+            
+            // Save the PDF
+            doc.save(`Invoice_${document.getElementById("customer-name").value}.pdf`);
+            
+            // Clear the bill after generating PDF
+            selectedItems = [];
+            updateBillingSection();
+            
+            // Refresh the inventory to show updated stock levels
+            const activeSession = document.querySelector(".session-buttons button[style*='background-color']");
+            if (activeSession) {
+                selectSession(activeSession.textContent);
+            }
+        }
+
+        // Function to save data to Excel
+        function saveToExcel() {
+            if (selectedItems.length === 0) {
+                alert("Please add items to the bill first!");
+                return;
+            }
+
+            const customerName = document.getElementById("customer-name").value;
+            const customerPhone = document.getElementById("customer-phone").value;
+            const customerEmail = document.getElementById("customer-email").value;
+
+            // Create a worksheet with customer details and items
+            const wsData = [
+                ["Customer Name", customerName],
+                ["Phone", customerPhone],
+                ["Email", customerEmail],
+                [],
+                ["Item", "Quantity (kg)", "Price", "Total"]
+            ];
+
+            // Add items to the worksheet data
+            selectedItems.forEach(item => {
+                wsData.push([item.name, item.quantity, item.price, item.total]);
+            });
+
+            // Add total
+            wsData.push([], ["Total Bill", "", "", totalBill]);
+
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+            // Create a workbook
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Bill");
+
+            // Save the workbook as an Excel file
+            XLSX.writeFile(wb, `Bill_${customerName}.xlsx`);
+            
+            // Clear the bill after saving to Excel
+            selectedItems = [];
+            updateBillingSection();
+        }
+
+        // Initialize with All Season items
+        selectSession("All Season");
+    </script>
+</body>
+</html>

@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fresh Produce Stock Management</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2e7d32;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #f1f1f1;
+            margin-right: 5px;
+            border-radius: 5px 5px 0 0;
+        }
+        .tab.active {
+            background-color: #4caf50;
+            color: white;
+        }
+        .stock-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .stock-item {
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: white;
+            transition: transform 0.2s;
+        }
+        .stock-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .stock-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: contain;
+            margin-bottom: 10px;
+        }
+        .stock-item h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .stock-item p {
+            margin: 5px 0;
+            color: #666;
+        }
+        .stock-controls {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+        .stock-controls input {
+            width: 60px;
+            padding: 5px;
+            margin-right: 10px;
+            text-align: center;
+        }
+        .stock-controls button {
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .stock-controls button:hover {
+            background-color: #3e8e41;
+        }
+        .search-bar {
+            margin-bottom: 20px;
+        }
+        .search-bar input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .summary-card {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Fresh Produce Stock Management</h1>
+        
+        <div class="summary-card">
+            <h2>Stock Summary</h2>
+            <div id="stock-summary">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </div>
+        
+        <div class="search-bar">
+            <input type="text" id="search-input" placeholder="Search for vegetables or fruits...">
+        </div>
+        
+        <div class="tabs">
+            <div class="tab active" data-season="all">All Items</div>
+            <div class="tab" data-season="Summer">Summer</div>
+            <div class="tab" data-season="Winter">Winter</div>
+            <div class="tab" data-season="Monsoon">Monsoon</div>
+            <div class="tab" data-season="All Season">All Season</div>
+        </div>
+        
+        <div class="stock-grid" id="stock-container">
+            <!-- Will be populated by JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        const itemsData = {
+            "Summer": [
+                { "name": "Mango", "price": 60, "image": "img/Mango.png", "stock": 50 },
+                { "name": "Watermelon", "price": 25, "image": "img/Watermelon.png", "stock": 30 },
+                { "name": "Cucumber", "price": 15, "image": "img/Cucumber.png", "stock": 40 },
+                { "name": "Tomato", "price": 20, "image": "img/Tomato.png", "stock": 60 },
+                { "name": "Muskmelon", "price": 30, "image": "img/Muskmelon.png", "stock": 25 },
+                { "name": "Papaya", "price": 35, "image": "img/Papaya.png", "stock": 20 },
+                { "name": "Pineapple", "price": 45, "image": "img/Pineapple.png", "stock": 15 },
+                { "name": "Guava", "price": 40, "image": "img/Guava.png", "stock": 35 },
+                { "name": "Litchi", "price": 50, "image": "img/Litchi.png", "stock": 18 },
+                { "name": "Bell Pepper", "price": 30, "image": "img/BellPepper.png", "stock": 45 }
+            ],
+            "Winter": [
+                { "name": "Carrot", "price": 20, "image": "img/Carrot.png", "stock": 70 },
+                { "name": "Peas", "price": 30, "image": "img/Peas.png", "stock": 40 },
+                { "name": "Spinach", "price": 15, "image": "img/Spinach.png", "stock": 55 },
+                { "name": "Apple", "price": 50, "image": "img/Apple.png", "stock": 25 },
+                { "name": "Orange", "price": 45, "image": "img/Orange.png", "stock": 30 },
+                { "name": "Strawberry", "price": 70, "image": "img/Strawberry.png", "stock": 15 },
+                { "name": "Beetroot", "price": 25, "image": "img/Beetroot.png", "stock": 35 },
+                { "name": "Broccoli", "price": 40, "image": "img/Broccoli.png", "stock": 20 },
+                { "name": "Cauliflower", "price": 35, "image": "img/Cauliflower.png", "stock": 25 },
+                { "name": "Turnip", "price": 22, "image": "img/Turnip.png", "stock": 30 }
+            ],
+            "Monsoon": [
+                { "name": "Corn", "price": 40, "image": "img/Corn.png", "stock": 50 },
+                { "name": "Pear", "price": 50, "image": "img/Pear.png", "stock": 25 },
+                { "name": "Jamun", "price": 55, "image": "img/Jamun.png", "stock": 20 },
+                { "name": "Plum", "price": 60, "image": "img/Plum.png", "stock": 30 },
+                { "name": "Cherry", "price": 70, "image": "img/Cherry.png", "stock": 15 },
+                { "name": "Sapota (Chikoo)", "price": 45, "image": "img/Sapota.png", "stock": 25 },
+                { "name": "Lemon", "price": 15, "image": "img/Lemon.png", "stock": 60 },
+                { "name": "Garlic", "price": 25, "image": "img/Garlic.png", "stock": 45 },
+                { "name": "Ginger", "price": 30, "image": "img/Ginger.png", "stock": 40 },
+                { "name": "Basil", "price": 10, "image": "img/Basil.png", "stock": 35 }
+            ],
+            "All Season": [
+                { "name": "Banana", "price": 20, "image": "img/Banana.png", "stock": 80 },
+                { "name": "Potato", "price": 25, "image": "img/Potato.png", "stock": 90 },
+                { "name": "Onion", "price": 30, "image": "img/Onion.png", "stock": 75 },
+                { "name": "Garlic", "price": 28, "image": "img/Garlic.png", "stock": 50 },
+                { "name": "Chili", "price": 22, "image": "img/Chili.png", "stock": 45 },
+                { "name": "Capsicum", "price": 35, "image": "img/Capsicum.png", "stock": 40 },
+                { "name": "Lettuce", "price": 18, "image": "img/Lettuce.png", "stock": 30 },
+                { "name": "Eggplant", "price": 32, "image": "img/Eggplant.png", "stock": 35 },
+                { "name": "Coriander", "price": 15, "image": "img/Coriander.png", "stock": 55 },
+                { "name": "Pumpkin", "price": 30, "image": "img/Pumpkin.png", "stock": 25 }
+            ]
+        };
+
+        // DOM elements
+        const stockContainer = document.getElementById('stock-container');
+        const tabs = document.querySelectorAll('.tab');
+        const searchInput = document.getElementById('search-input');
+        const stockSummary = document.getElementById('stock-summary');
+
+        // Current filter state
+        let currentSeason = 'all';
+        let currentSearch = '';
+
+        // Initialize the page
+        function init() {
+            renderStockSummary();
+            renderStockItems();
+            setupEventListeners();
+        }
+
+        // Render stock summary
+        function renderStockSummary() {
+            let totalItems = 0;
+            let totalValue = 0;
+            let lowStockItems = 0;
+
+            // Calculate summary data
+            for (const season in itemsData) {
+                itemsData[season].forEach(item => {
+                    totalItems += item.stock;
+                    totalValue += item.stock * item.price;
+                    if (item.stock < 20) {
+                        lowStockItems++;
+                    }
+                });
+            }
+
+            // Update summary HTML
+            stockSummary.innerHTML = `
+                <p>Total Items in Stock: <strong>${totalItems}</strong></p>
+                <p>Total Inventory Value: <strong>₹${totalValue.toFixed(2)}</strong></p>
+                <p>Low Stock Items (less than 20): <strong class="${lowStockItems > 0 ? 'warning' : ''}">${lowStockItems}</strong></p>
+            `;
+        }
+
+        // Render stock items based on filters
+        function renderStockItems() {
+            stockContainer.innerHTML = '';
+
+            // Get all items that match current filters
+            const filteredItems = getAllItems().filter(item => {
+                const matchesSeason = currentSeason === 'all' || 
+                    Object.keys(itemsData).some(season => 
+                        season === currentSeason && 
+                        itemsData[season].some(i => i.name === item.name)
+                    );
+                const matchesSearch = item.name.toLowerCase().includes(currentSearch.toLowerCase());
+                return matchesSeason && matchesSearch;
+            });
+
+            // Render each item
+            filteredItems.forEach(item => {
+                const stockItem = document.createElement('div');
+                stockItem.className = 'stock-item';
+                stockItem.innerHTML = `
+                    <img src="${item.image}" alt="${item.name}">
+                    <h3>${item.name}</h3>
+                    <p>Price: ₹${item.price.toFixed(2)}</p>
+                    <p>Current Stock: <span class="${item.stock < 20 ? 'warning' : ''}">${item.stock}</span></p>
+                    <div class="stock-controls">
+                        <input type="number" id="update-${item.name.replace(/\s+/g, '-')}" min="0" value="0">
+                        <button onclick="updateStock('${item.name}', 'add')">Add</button>
+                        <button onclick="updateStock('${item.name}', 'remove')">Remove</button>
+                    </div>
+                `;
+                stockContainer.appendChild(stockItem);
+            });
+
+            // Add warning style if needed
+            const style = document.createElement('style');
+            style.innerHTML = `
+                .warning {
+                    color: #d32f2f;
+                    font-weight: bold;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // Get all items from all seasons
+        function getAllItems() {
+            let allItems = [];
+            for (const season in itemsData) {
+                allItems = allItems.concat(itemsData[season]);
+            }
+            return allItems;
+        }
+
+        // Update stock for an item
+        function updateStock(itemName, action) {
+            const inputField = document.getElementById(`update-${itemName.replace(/\s+/g, '-')}`);
+            const amount = parseInt(inputField.value) || 0;
+
+            if (amount <= 0) {
+                alert('Please enter a valid amount');
+                return;
+            }
+
+            // Find the item in any season and update its stock
+            for (const season in itemsData) {
+                const itemIndex = itemsData[season].findIndex(item => item.name === itemName);
+                if (itemIndex !== -1) {
+                    if (action === 'add') {
+                        itemsData[season][itemIndex].stock += amount;
+                    } else if (action === 'remove') {
+                        if (itemsData[season][itemIndex].stock < amount) {
+                            alert('Cannot remove more than available stock');
+                            return;
+                        }
+                        itemsData[season][itemIndex].stock -= amount;
+                    }
+                    break;
+                }
+            }
+
+            // Reset input field
+            inputField.value = 0;
+
+            // Re-render the view
+            renderStockSummary();
+            renderStockItems();
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            // Tab switching
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    currentSeason = tab.dataset.season;
+                    renderStockItems();
+                });
+            });
+
+            // Search functionality
+            searchInput.addEventListener('input', () => {
+                currentSearch = searchInput.value;
+                renderStockItems();
+            });
+        }
+
+        // Initialize the application
+        init();
+    </script>
+</body>
+</html>
